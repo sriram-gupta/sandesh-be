@@ -18,6 +18,13 @@ const eventHandlers = {
   'join_room': handleJoinRoom,
   'send_message': handleSendMessage,
   'disconnect': handleDisconnect,
+  'new_message_to_room': (socket,data) => {
+    console.log(data, socket.id);
+    const {roomID , msg } = data;
+    rooms[roomID]['messages'].push({ msg: msg , sender: socket.id  });
+    io.emit('lobby_update', getLobbyData());
+  }
+  
 };
 
 io.on('connection', (socket) => {
@@ -42,6 +49,7 @@ function handleCreateRoom(socket, data) {
     id: roomID,
     name: data.roomName,
     members: [socket.id],
+    messages:[]
   };
 
   rooms[roomID] = room;
