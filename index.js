@@ -28,6 +28,7 @@ const eventHandlers = {
 };
 
 io.on('connection', (socket) => {
+  socket.join("default");
   console.log('New connection:', socket.id);
   socket.emit('lobby_update', getLobbyData());
   socket.emit('getId', socket.id);
