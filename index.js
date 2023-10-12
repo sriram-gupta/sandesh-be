@@ -8,23 +8,30 @@ const io = socketIO(server);
 
 app.use(express.json());
 
-const rooms = {};
+const rooms = {
+  'default': {
+    id: 'default',
+    name: 'default',
+    members: [],
+    messages: []
+  }
+};
 const userList = {};
 let lastRoomID = 0; // Initialize with 0 for the first room.
 
 const eventHandlers = {
   'create_room': handleCreateRoom,
-  'delete_room':handleDeleteRoom,
+  'delete_room': handleDeleteRoom,
   'join_room': handleJoinRoom,
   'send_message': handleSendMessage,
   'disconnect': handleDisconnect,
-  'new_message_to_room': (socket,data) => {
+  'new_message_to_room': (socket, data) => {
     console.log(data, socket.id);
-    const {roomID , msg } = data;
-    rooms[roomID]['messages'].push({ msg: msg , sender: socket.id  });
+    const { roomID, msg } = data;
+    rooms[roomID]['messages'].push({ msg: msg, sender: socket.id });
     io.emit('lobby_update', getLobbyData());
   }
-  
+
 };
 
 io.on('connection', (socket) => {
@@ -50,7 +57,7 @@ function handleCreateRoom(socket, data) {
     id: roomID,
     name: data.roomName,
     members: [socket.id],
-    messages:[]
+    messages: []
   };
 
   rooms[roomID] = room;
