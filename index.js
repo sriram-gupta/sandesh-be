@@ -9,10 +9,12 @@ const io = socketIO(server);
 app.use(express.json());
 
 const rooms = {};
+const userList = {};
 let lastRoomID = 0; // Initialize with 0 for the first room.
 
 const eventHandlers = {
   'create_room': handleCreateRoom,
+  'delete_room':handleDeleteRoom,
   'join_room': handleJoinRoom,
   'send_message': handleSendMessage,
   'disconnect': handleDisconnect,
@@ -21,6 +23,7 @@ const eventHandlers = {
 io.on('connection', (socket) => {
   console.log('New connection:', socket.id);
   socket.emit('lobby_update', getLobbyData());
+  socket.emit('getId', socket.id);
   Object.keys(eventHandlers).forEach((eventName) => {
     socket.on(eventName, (data) => {
       eventHandlers[eventName](socket, data);
@@ -45,6 +48,22 @@ function handleCreateRoom(socket, data) {
   socket.join(roomID);
   socket.emit('room_created', room);
   io.emit('lobby_update', getLobbyData());
+}
+
+
+async function handleDeleteRoom(socket, data) {
+  console.log(`Delect room called for ${data.roomID}`)
+  const room = rooms[data.roomID];
+  if (room && room.members.includes(socket.id)) {
+    console.log(`Before ${JSON.stringify(rooms)}`)
+    delete rooms[data.roomID]; // Delete the room
+    console.log(`After ${JSON.stringify(rooms)}`)
+    await io.in(data.roomID).socketsLeave(data.roomID);
+    socket.emit('room_deleted', data.roomID); // Send a confirmation
+    io.emit('lobby_update', getLobbyData()); // Update the lobby
+  } else {
+    socket.emit('room_not_found', { error: 'Room not found or unauthorized' });
+  }
 }
 
 function handleJoinRoom(socket, data) {
